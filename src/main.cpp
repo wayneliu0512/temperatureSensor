@@ -5,7 +5,7 @@
 //*-- IoT Information
 #define SSID "ADLINKTECH"
 #define PASS "adlink6166"
-#define IP "184.106.153.149" // ThingSpeak IP Address: 184.106.153.149
+#define IP "172.16.4.24" // ThingSpeak IP Address: 184.106.153.149
 #define _SCK 4
 #define _CS 2
 #define _SO 6
@@ -13,11 +13,12 @@
 
 // 使用 GET 傳送資料的格式
 // GET /update?key=[THINGSPEAK_KEY]&field1=[data 1]&filed2=[data 2]...;
-String GET = "GET /update?key=CYMS8PAN6RKBN70V";
+String POST = "POST /temp HTTP/1.1\r\nHOST: 172.16.4.24\r\nContent-Type: application/json\r\nContent-Length: ";
+
 static volatile uint8_t is_tc_open;
 void sendDebug(String cmd);
 void Loding();
-void SentOnCloud(String T, String H);
+void SentOnCloud(String T);
 float max6675_getCelsius();
 void software_Reset();
 
@@ -65,7 +66,7 @@ void loop()
     float C = max6675_getCelsius();
 //    float F = max6675_getFahrenheit();
     delay(1000);   // 60 second
-    SentOnCloud( String(5), String(C) );
+    SentOnCloud( String(C) );
     Serial.print( C );
     Serial.println(" C");
   }
@@ -73,19 +74,21 @@ void loop()
   delay(1000);
 }
 
-void SentOnCloud( String T, String H )
+void SentOnCloud( String T )
 {
     // 設定 ESP8266 作為 Client 端
     String cmd = "AT+CIPSTART=\"TCP\",\"";
     cmd += IP;
-    cmd += "\",80";
+    cmd += "\",8008";
     sendDebug(cmd);
     if( Serial1.find( "Error" ) )
     {
         Serial.print( "RECEIVED: Error\nExit1" );
         return;
     }
-    cmd = GET + "&field1=" + T + "&field2=" + H +"\r\n";
+
+    String jsonCmd = "{\"temp\":" + T + "}";
+    cmd = POST + jsonCmd.length() + "\r\n" + "\r\n" + jsonCmd + "\r\n";
     Serial1.print( "AT+CIPSEND=" );
     Serial1.println( cmd.length() );
     if(Serial1.find( ">" ) )
